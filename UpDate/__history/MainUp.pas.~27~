@@ -1,0 +1,86 @@
+unit MainUp;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, ScktComp, StdCtrls;
+
+type
+  TForm1 = class(TForm)
+    Edit1: TEdit;
+    Label1: TLabel;
+    UpSocket: TServerSocket;
+    Edit2: TEdit;
+    Label2: TLabel;
+    Button1: TButton;
+    procedure FormCreate(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure UpSocketClientWrite(Sender: TObject; Socket: TCustomWinSocket);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+  UpMess: String;
+
+implementation
+
+{$R *.dfm}
+
+procedure TForm1.Button1Click(Sender: TObject);
+
+Var F: Text;
+
+begin
+ AssignFile(F, 'config.cfg');
+ ReWrite(F);
+ WriteLn(F, Edit1.Text);
+ WriteLn(F, Edit2.Text);
+ Close(F);
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+
+Var F: Text;
+
+begin
+ AssignFile(F, 'config.cfg');
+ Reset(F);
+ ReadLn(F, Edit1.Text);
+ ReadLn(F, Edit2.Text);
+ Close(F);
+end;
+
+procedure TForm1.UpSocketClientWrite(Sender: TObject; Socket: TCustomWinSocket);
+
+Var S, T, Par: String;
+
+begin
+ S:=Socket.ReceiveText;
+ UpMess:=UpMess+S;
+ While Pos('|', UpMess)<>0 Do
+ Begin
+  T:=Copy(UpMess, 1, pos('|', UpMess)-1);
+  Delete(UpMess, 1, pos('|', UpMess));
+  if Pos(' ', T)<>0 then
+  Begin
+   Par:=Copy(T, pos(' ', T)+1, Length(T));
+   Delete(T, pos(' ', T)+1, Length(T));
+  end
+  Else
+   Par:='';
+  if T='$GetLastVersion' then
+  Begin
+   Socket.SendText('$CurVersion '+Edit1.Text+'|');
+   Socket.SendText('$Url '+Edit2.Text+'|');
+   Socket.SendText('END|');
+   Continue;
+  end;
+ end;
+end;
+
+end.

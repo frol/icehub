@@ -1,0 +1,35 @@
+k=0;
+
+function GetPrefix(s)
+ k=0
+ for i=1,string.len(s) do
+  if t=="." then
+  else
+   t=string.sub(s, i, i)
+  end;
+  if t=="." then
+  else
+   k=k+1;
+  end;
+ end;
+ k=k+2; 
+ t="";
+ for i=k,string.len(s) do
+  if t=="." then
+  else
+   t=string.sub(s, i, i)
+  end;
+  if t=="." then
+  else
+   k=k+1;
+  end;
+ end;
+ ip=string.sub(s, 1, k-1);
+ if (ip=="10.50")or(ip=="80.73") then 
+  s="[Sloboda]";
+ end;
+ if ip=="192.168" then
+  s="[Fastnet]";
+ end;
+ return s;
+end;

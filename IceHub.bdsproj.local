@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2007.02.26 13:02:52.186.pas,d:\DC SERV 2006\Unit1.pas=d:\DC SERV 2006\AddForm.pas</Transaction>
+    <Transaction>2007.02.26 13:02:52.201.dfm,d:\DC SERV 2006\Unit1.dfm=d:\DC SERV 2006\AddForm.dfm</Transaction>
+    <Transaction>2007.02.26 13:05:42.998.pas,d:\DC SERV 2006\AddForm.pas=d:\DC SERV 2006\Add.pas</Transaction>
+    <Transaction>2007.02.26 13:05:42.998.dfm,d:\DC SERV 2006\AddForm.dfm=d:\DC SERV 2006\Add.dfm</Transaction>
+    <Transaction>2007.02.26 13:06:32.092.pas,d:\DC SERV 2006\Add.pas=D:\DC SERV 2006\Add.pas</Transaction>
+    <Transaction>2007.02.26 13:06:32.092.dfm,d:\DC SERV 2006\Add.dfm=D:\DC SERV 2006\Add.dfm</Transaction>
+    <Transaction>2007.03.09 20:04:59.421.bdsproj,D:\!!!Programming!!!\DC SERV 2006\DCServer.bdsproj=D:\!!!Programming!!!\DC SERV 2006\IceHub.bdsproj</Transaction>
+  </Transactions>
+</BorlandProject>

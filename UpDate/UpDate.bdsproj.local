@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2007.03.05 14:30:06.921.pas,C:\Documents and Settings\Frol\My Documents\Borland Studio Projects\Unit1.pas=D:\DC SERV 2006\UpDate\MainUp.pas</Transaction>
+    <Transaction>2007.03.05 14:30:06.921.dfm,C:\Documents and Settings\Frol\My Documents\Borland Studio Projects\Unit1.dfm=D:\DC SERV 2006\UpDate\MainUp.dfm</Transaction>
+    <Transaction>2007.03.05 14:30:16.593.bdsproj,C:\Documents and Settings\Frol\My Documents\Borland Studio Projects\Project1.bdsproj=D:\DC SERV 2006\UpDate\UpDate.bdsproj</Transaction>
+  </Transactions>
+</BorlandProject>

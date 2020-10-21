@@ -1,0 +1,1167 @@
+unit Options;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ComCtrls, TabNotBk, Main, DCPockets, LuaUnit,
+  Add, Registry, ScktComp, RichEdit;
+
+type
+  TOptionsForm = class(TForm)
+    TabbedNotebook1: TTabbedNotebook;
+    Edit1: TEdit;
+    Label1: TLabel;
+    Label2: TLabel;
+    Edit2: TEdit;
+    Button1: TButton;
+    Button2: TButton;
+    Button3: TButton;
+    Edit3: TEdit;
+    Edit4: TEdit;
+    Edit5: TEdit;
+    Edit6: TEdit;
+    Edit7: TEdit;
+    Label5: TLabel;
+    Label6: TLabel;
+    Label7: TLabel;
+    Label8: TLabel;
+    Label9: TLabel;
+    LB: TListBox;
+    Button4: TButton;
+    Button5: TButton;
+    OpenDialog1: TOpenDialog;
+    Button6: TButton;
+    Label3: TLabel;
+    Edit8: TEdit;
+    OOps: TListView;
+    OBanIP: TListView;
+    Button7: TButton;
+    Button8: TButton;
+    Button9: TButton;
+    Button10: TButton;
+    OBanName: TListView;
+    Button12: TButton;
+    Button11: TButton;
+    Label13: TLabel;
+    Label14: TLabel;
+    Label15: TLabel;
+    OCoolName: TListView;
+    Button13: TButton;
+    Button14: TButton;
+    Label16: TLabel;
+    CheckBox1: TCheckBox;
+    Edit13: TEdit;
+    Button15: TButton;
+    Label17: TLabel;
+    CheckBox2: TCheckBox;
+    CheckBox3: TCheckBox;
+    CheckBox4: TCheckBox;
+    ScriptEdit: TRichEdit;
+    procedure FormCreate(Sender: TObject);
+    procedure ScriptEditChange(Sender: TObject);
+    procedure Button15Click(Sender: TObject);
+    procedure Button14Click(Sender: TObject);
+    procedure Button13Click(Sender: TObject);
+    procedure Button7Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
+    procedure LBDblClick(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
+    procedure Button6Click(Sender: TObject);
+    procedure RichEdit1Change(Sender: TObject);
+    procedure Button9Click(Sender: TObject);
+    procedure Button12Click(Sender: TObject);
+    procedure Button8Click(Sender: TObject);
+    procedure Button10Click(Sender: TObject);
+    procedure Button11Click(Sender: TObject);
+    procedure ScriptEditKeyUp(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+  Procedure Save;
+  Procedure Load;
+
+type
+    TStyle = record
+      Color: TColor;
+      Styles: TFontStyles;
+    end;
+
+    TSkobki = record
+      First, Last: String;
+      Comment: Boolean;
+      Style: TStyle;
+    end;
+
+    TRezerved = record
+      S: String;
+      Style: TStyle;
+    end;
+
+Const
+    Rus: Array [1..32, 1..2] of Char = (('а', 'А'),('б', 'Б'),('в', 'В'),('г', 'Г'),('д', 'Д'),('е', 'Е'),('ё', 'Ё'),('ж', 'Ж'),('з', 'З'),('и', 'И'),('к', 'К'),('л', 'Л'),('м', 'М'),('н', 'Н'),('о', 'О'),('п', 'П'),('р', 'Р'),
+    ('с', 'С'),('т', 'Т'),('у', 'У'),('ф', 'Ф'),('х', 'Х'),('ц', 'Ц'),('ч', 'Ч'),('ш', 'Ш'),('щ', 'Щ'),('ь', 'Ь'),('ъ', 'Ъ'),('ы', 'Ы'),('э', 'Э'),('ю', 'Ю'),('я', 'Я'));
+
+var
+  OptionsForm: TOptionsForm;
+  Edited: String;
+  RChanged: Boolean = False;
+  Rezerved, Znak: Array of TRezerved;
+  Skobki: Array of TSkobki;
+  Edit: Boolean;
+  Ti: TDateTime;
+  
+implementation
+
+{$R *.dfm}
+//---------------------------------------------------------
+
+Function RUpCase(Ch: Char): Char;
+
+var
+  I: Integer;
+
+Begin
+ Result:=UpCase(Ch);
+ if Ch=Result then
+  for I := 1 to High(Rus) do
+   if Ch=Rus[I, 1] then
+   Begin
+    Result:=Rus[I, 2];
+    Break;
+   end;
+end;
+
+Function RLowCase(Ch: Char): Char;
+
+var
+  I: Integer;
+  T: String;
+
+Begin
+ T:=LowerCase(Ch);
+ Result:=T[1];
+ if Ch=Result then
+  for I := 1 to High(Rus) do
+   if Ch=Rus[I, 2] then
+   Begin
+    Result:=Rus[I, 1];
+    Break;
+   end;
+end;
+
+Function RUpperCase(S: String): String;
+
+Var I: LongInt;
+    T: String;
+
+Begin
+ T:='';
+ For I:=1 To Length(S) Do
+  T:=T+RUpCase(S[I]);
+ RUpperCase:=T;
+End;
+
+Function RLowerCase(S: String): String;
+
+Var I: LongInt;
+    T: String;
+
+Begin
+ T:='';
+ For I:=1 To Length(S) Do
+  T:=T+RLowCase(S[I]);
+ RLowerCase:=T;
+End;
+
+Function Letter(Ch: Char): Boolean;
+
+Begin
+ If (RUpCase(Ch)=Ch)And(RLowCase(Ch)=Ch) then
+  Letter:=False
+ Else
+  Letter:=True;
+End;
+
+Function PosAfter(Sub, S: String; num: LongInt): LongInt;
+
+Begin
+ delete(S, 1, num);
+ if pos(Sub, S)<>0 then
+  PosAfter:=num+Pos(Sub, S)
+ Else
+  PosAfter:=0;
+End;
+
+type
+  TTextRange = record
+    chrg: TCharRange;
+    lpstrText: PAnsiChar;
+  end;
+
+procedure Syntax(RE: TRichEdit; Rez: array of TRezerved; Sko: array of TSkobki; TextColor: TColor; TextStyle: TFontStyles; Full: Boolean);
+
+var Q, I, J, ST: LongInt;
+    B: Boolean;
+    Te: Array of Array [1..3] of LongInt;
+    Sk: Array of Array of LongInt;
+    S, T: String;
+    Po: TPoint;
+    TextRange: TTextRange;
+
+Function Find(Num: LongInt): LongInt;
+
+var I: LongInt;
+
+begin
+  for I:=Num-1 DownTo 1 Do
+    if Te[I, 2]<>0 then
+    begin
+      Find:=Te[I, 2];
+      Exit;
+    end;
+  Find:=1;
+end;
+
+Function InBrackets(Num: LongInt): Boolean;
+
+var I: LongInt;
+
+begin
+  Result:=False;
+  if Sko[Num].Comment then
+    Num:=-1;
+  for I:=0 to High(Sk) do
+  begin
+    if (Sk[I, 0]<>0)And(Num<>I) then
+    begin
+      Result:=True;
+      Break;
+    end;
+  end;
+end;
+
+Function Comment: Boolean;
+
+var I: LongInt;
+
+begin
+  Comment:=False;
+  for I := 0 to High(Sko) do
+    if (Sko[I].Comment)And(Sk[I, 0]>0) then
+    begin
+      Comment:=True;
+      Break;
+    end;
+end;
+
+procedure DelFromAll(Num: LongInt);
+
+var I, J: LongInt;
+
+begin
+  I:=0;
+  While I<=High(Sk) do
+  begin
+    J:=Sk[I, 0];
+    while J>= 1 do
+    begin
+      if Sk[I, J]>Num then
+      begin
+        Dec(Sk[I, 0]);
+        SetLength(Sk[I], High(Sk[I]));
+      end else
+        Break;
+      Dec(J);
+    end;
+    Inc(I);
+  end;
+end;
+
+begin
+//  Ti:=Time;
+  Po:=Re.CaretPos;
+  S:=Re.Text;
+  SetLength(Sk, Length(Sko));
+  for I := 0 to High(Sk) do
+    SetLength(Sk[I], 1);
+  SetLength(Te, 0);
+  Q:=-1;
+  I:=1;
+  S:=RUpperCase(S);
+  while I<=Length(S) do
+  begin
+    B:=False;
+    for J:=0 to High(Rez) do
+    begin
+      T:=Copy(S, I, length(Rez[J].S));
+      if (T=Rez[J].S)
+         And(Not Letter(S[I-1]))And(Not Letter(S[I+Length(Rez[J].S)]))And(not InBrackets(-1)) then
+      begin
+        inc(Q);
+        SetLength(Te, High(Te)+2);
+        Te[Q, 1]:=I-1;
+        inc(I, Length(Rez[J].S)-1);
+        Te[Q, 2]:=I;
+        Te[Q, 3]:=J;
+        B:=True;
+        Break;
+      end;
+    end;
+
+    if not B then
+    begin
+      for J:=0 to High(Sko) do
+      begin
+        T:=Copy(S, I, length(Sko[J].Last));
+        if (T=Sko[J].Last)And(Sk[J, 0]>0)And((not Comment){And((not InBrackets(J))}Or(Sko[J].Comment)) then
+        begin
+          Dec(Sk[J, 0]);
+          Te[Sk[J, Sk[J, 0]+1], 2]:=I-1;
+          DelFromAll(Sk[J, Sk[J, 0]+1]);
+          B:=True;
+          SetLength(Sk[J], High(Sk[J]));
+          inc(I, Length(Sko[J].Last)-1);
+          Break;
+        end;
+      end;
+    end;
+
+    if Not B then
+    begin
+      for J:=0 to High(Sko) do
+      begin
+        T:=Copy(S, I, length(Sko[J].First));
+        if (T=Sko[J].First)And(Not Comment){And(Not InBrackets(J))} then
+        begin
+          Inc(Sk[J, 0]);
+          inc(Q);
+          SetLength(Sk[J], High(Sk[J])+2);
+          SetLength(Te, High(Te)+2);
+          Sk[J, Sk[J, 0]]:=Q;
+          Te[Q, 1]:=I+Length(Sko[J].First)-1;
+          Te[Q, 3]:=J+Length(Rez);
+          Inc(I, Length(Sko[J].First)-1);
+          Break;
+        end;
+      end;
+    end;
+
+    inc(I);
+  end;
+  RE.Lines.BeginUpdate;
+  OptionsForm.Caption:=FloatToStr((Time-ti)/OneSec);
+  RE.Perform(EM_SETSEL, 0, Length(RE.Text));
+  RE.SelAttributes.Color:=TextColor;
+  RE.SelAttributes.Style:=TextStyle;
+  for I:=0 to Q do
+  begin
+    if Te[I, 2]<>0 then
+    begin
+//      St:=Find(I);
+      RE.Perform(EM_SETSEL, Te[I, 1], Te[I, 2]);
+      if Te[I, 3]>=Length(Rez) then
+      begin
+        RE.SelAttributes.Color:=Sko[Te[I, 3]-Length(Rez)].Style.Color;
+        RE.SelAttributes.Style:=Sko[Te[I, 3]-Length(Rez)].Style.Styles;
+      end else
+      begin
+        RE.SelAttributes.Color:=Rez[Te[I, 3]].Style.Color;
+        RE.SelAttributes.Style:=Rez[Te[I, 3]].Style.Styles;
+      end;
+    end;
+  end;
+  OptionsForm.Caption:=OptionsForm.Caption+' '+FloatToStr((Time-ti)/OneSec);
+  RE.Lines.EndUpdate;
+  Re.CaretPos:=Po;
+end;
+
+Procedure LoadRezerved;
+
+begin
+ SetLength(Skobki, 6);
+ Skobki[0].First:='{';
+ Skobki[0].Last:='}';
+ Skobki[0].Style.Color:=clNavy-50000;
+ Skobki[0].Style.Styles:=[];
+ Skobki[1].First:='(';
+ Skobki[1].Last:=')';
+ Skobki[1].Style.Color:=clSkyBlue-50000;
+ Skobki[1].Style.Styles:=[];
+ Skobki[2].First:='"';
+ Skobki[2].Last:='"';
+ Skobki[2].Style.Color:=clSkyBlue-50000;
+ Skobki[2].Style.Styles:=[];
+ Skobki[3].First:='''';
+ Skobki[3].Last:='''';
+ Skobki[3].Style.Color:=clSkyBlue-50000;
+ Skobki[3].Style.Styles:=[];
+ Skobki[4].First:='--[[';
+ Skobki[4].Last:=']]--';
+ Skobki[4].Comment:=True;
+ Skobki[4].Style.Color:=clGreen;
+ Skobki[4].Style.Styles:=[fsItalic];
+ Skobki[5].First:='--';
+ Skobki[5].Last:=#13;
+ Skobki[5].Comment:=True;
+ Skobki[5].Style.Color:=clGreen;
+ Skobki[5].Style.Styles:=[fsItalic];
+ SetLength(Rezerved, 8);
+ Rezerved[0].S:='THEN';
+ Rezerved[0].Style.Color:=clNavy;
+ Rezerved[0].Style.Styles:=[fsBold];
+ Rezerved[1].S:='END';
+ Rezerved[1].Style.Color:=clNavy;
+ Rezerved[1].Style.Styles:=[fsBold];
+ Rezerved[2].S:='IF';
+ Rezerved[2].Style.Color:=clNavy;
+ Rezerved[2].Style.Styles:=[fsBold];
+ Rezerved[3].S:='FUNCTION';
+ Rezerved[3].Style.Color:=clNavy;
+ Rezerved[3].Style.Styles:=[fsBold];
+ Rezerved[4].S:='RETURN';
+ Rezerved[4].Style.Color:=clNavy;
+ Rezerved[4].Style.Styles:=[fsBold];
+ Rezerved[5].S:='FOR';
+ Rezerved[5].Style.Color:=clNavy;
+ Rezerved[5].Style.Styles:=[fsBold];
+ Rezerved[6].S:='DO';
+ Rezerved[6].Style.Color:=clNavy;
+ Rezerved[6].Style.Styles:=[fsBold];
+ Rezerved[7].S:='IN';
+ Rezerved[7].Style.Color:=clNavy;
+ Rezerved[7].Style.Styles:=[fsBold];
+ SetLenght(Znak, 5);
+ Znak[].S:='';
+ Znak[].Style.Color:=clBlack;
+ Znak[].Style.Styles:=[fsBold];
+end;
+
+//---------------------------------------------------------
+
+Procedure Save;
+
+Var I: LongInt;
+    F: TextFile;
+    T, A, B: Extended;
+    RegProcess: function (p1, p2:integer): integer; stdcall;
+    hDllKernel: HInst; reg: TRegistry;
+
+Begin
+ HubName:=OptionsForm.Edit1.Text;
+ HubTopic:=OptionsForm.Edit2.Text;
+ AllSend('$HubName '+HubName+HubTopic+'|');
+ BotName:=OptionsForm.Edit3.Text;
+ HubMinSlots:=StrToInt(OptionsForm.Edit4.Text);
+ HubMinShare:=OptionsForm.Edit5.Text;
+ CountLastMessages:=StrToInt(OptionsForm.Edit6.Text);
+ HubMaxHubs:=StrToInt(OptionsForm.Edit7.Text);
+ I:=0;
+ //SetLength(Servers, 0);
+ SetLength(HubPort, 0);
+ while Pos(';', OptionsForm.Edit8.Text)<>0 do
+ Begin
+  SetLength(HubPort, High(HubPort)+2);
+  HubPort[I]:=StrToInt(Copy(OptionsForm.Edit8.Text, 1, Pos(';', OptionsForm.Edit8.Text)-1));
+  OptionsForm.Edit8.Text:=Copy(OptionsForm.Edit8.Text, Pos(';', OptionsForm.Edit8.Text)+1, Length(OptionsForm.Edit8.Text));
+  if (I=0) then
+  Begin
+   if (MainForm.ServerSocket1.Port<>HubPort[0]) then
+   begin
+    MainForm.ServerSocket1.Close;
+    MainForm.ServerSocket1.Port:=HubPort[I];
+    try
+     MainForm.ServerSocket1.Open;
+     AddText('**Open server, port = '+InttoStr(MainForm.ServerSocket1.Port), MainForm.MainEdit);
+    Except
+     AddText('**Can''t open server, port = '+InttoStr(MainForm.ServerSocket1.Port), MainForm.MainEdit);
+    end;
+   end;
+  end else
+  begin
+   if (I<=High(Servers))And(Servers[I-1].Port<>HubPort[I]) then
+   begin
+    Servers[I-1]:=TServerSocket.Create(nil);
+    Servers[I-1].OnClientConnect:=MainForm.ServerSocket1.OnClientConnect;
+    Servers[I-1].OnClientDisconnect:=MainForm.ServerSocket1.OnClientDisconnect;
+    Servers[I-1].OnClientRead:=MainForm.ServerSocket1.OnClientRead;
+    Servers[I-1].OnClientWrite:=MainForm.ServerSocket1.OnClientWrite;
+    Servers[I-1].OnClientError:=MainForm.ServerSocket1.OnClientError;
+    Servers[I-1].Port:=HubPort[I];
+    try
+     Servers[I-1].Open;
+     AddText('**Open server, port = '+InttoStr(Servers[I-1].Port), MainForm.MainEdit);
+    except
+     AddText('**Can''t open server, port = '+InttoStr(Servers[I-1].Port), MainForm.MainEdit);
+    end;
+   end else
+   begin
+    if (I>High(Servers)) then
+    begin
+     SetLength(Servers, High(Servers)+2);
+     Servers[I-1]:=TServerSocket.Create(nil);
+     Servers[I-1].OnClientConnect:=MainForm.ServerSocket1.OnClientConnect;
+     Servers[I-1].OnClientDisconnect:=MainForm.ServerSocket1.OnClientDisconnect;
+     Servers[I-1].OnClientRead:=MainForm.ServerSocket1.OnClientRead;
+     Servers[I-1].OnClientWrite:=MainForm.ServerSocket1.OnClientWrite;
+     Servers[I-1].OnClientError:=MainForm.ServerSocket1.OnClientError;
+     Servers[I-1].Port:=HubPort[I];
+     try
+      Servers[I-1].Open;
+      AddText('**Open server, port = '+InttoStr(Servers[I-1].Port), MainForm.MainEdit);
+     except
+      AddText('**Can''t open server, port = '+InttoStr(Servers[I-1].Port), MainForm.MainEdit);
+     end;
+    end;
+   end;
+  end;
+  Inc(I);
+ end;
+ if OptionsForm.Edit8.Text<>'' then
+ Begin
+  SetLength(HubPort, High(HubPort)+2);
+  HubPort[I]:=StrToInt(OptionsForm.Edit8.Text);
+  if I=0 then
+  Begin
+   if StrToInt(OptionsForm.Edit8.Text)<>MainForm.ServerSocket1.Port then
+   begin
+    MainForm.ServerSocket1.Close;
+    MainForm.ServerSocket1.Port:=HubPort[I];
+    try
+     MainForm.ServerSocket1.Open;
+     AddText('**Open server, port = '+InttoStr(MainForm.ServerSocket1.Port), MainForm.MainEdit);
+    Except
+     AddText('**Can''t open server, port = '+InttoStr(MainForm.ServerSocket1.Port), MainForm.MainEdit);
+    End;
+   end;
+  end Else
+  Begin
+   if (I<=High(Servers))And(StrToInt(OptionsForm.Edit8.Text)<>Servers[I-1].Port) then
+   begin
+    SetLength(Servers, High(Servers)+2);
+    Servers[I-1]:=TServerSocket.Create(nil);
+    Servers[I-1].OnClientConnect:=MainForm.ServerSocket1.OnClientConnect;
+    Servers[I-1].OnClientDisconnect:=MainForm.ServerSocket1.OnClientDisconnect;
+    Servers[I-1].OnClientRead:=MainForm.ServerSocket1.OnClientRead;
+    Servers[I-1].OnClientWrite:=MainForm.ServerSocket1.OnClientWrite;
+    Servers[I-1].OnClientError:=MainForm.ServerSocket1.OnClientError;
+    Servers[I-1].Port:=HubPort[I];
+    try
+     Servers[I-1].Open;
+     AddText('**Open server, port = '+InttoStr(Servers[I-1].Port), MainForm.MainEdit);
+    Except
+     AddText('**Can''t open server, port = '+InttoStr(Servers[I-1].Port), MainForm.MainEdit);
+    End;
+   end else
+   begin
+    if (I>High(Servers)) then
+    begin
+     SetLength(Servers, High(Servers)+2);
+     Servers[I-1]:=TServerSocket.Create(nil);
+     Servers[I-1].OnClientConnect:=MainForm.ServerSocket1.OnClientConnect;
+     Servers[I-1].OnClientDisconnect:=MainForm.ServerSocket1.OnClientDisconnect;
+     Servers[I-1].OnClientRead:=MainForm.ServerSocket1.OnClientRead;
+     Servers[I-1].OnClientWrite:=MainForm.ServerSocket1.OnClientWrite;
+     Servers[I-1].OnClientError:=MainForm.ServerSocket1.OnClientError;
+     Servers[I-1].Port:=HubPort[I];
+     try
+      Servers[I-1].Open;
+      AddText('**Open server, port = '+InttoStr(Servers[I-1].Port), MainForm.MainEdit);
+     except
+      AddText('**Can''t open server, port = '+InttoStr(Servers[I-1].Port), MainForm.MainEdit);
+     end;
+    end;
+   end;
+  end;
+ end else
+ begin
+  if I=0 then
+  Begin
+   if StrToInt(OptionsForm.Edit8.Text)<>MainForm.ServerSocket1.Port then
+   begin
+    MainForm.ServerSocket1.Close;
+    MainForm.ServerSocket1.Port:=2300;
+    try
+     MainForm.ServerSocket1.Open;
+     AddText('**Open server, port = '+InttoStr(MainForm.ServerSocket1.Port), MainForm.MainEdit);
+    Except
+     AddText('**Can''t open server, port = '+InttoStr(MainForm.ServerSocket1.Port), MainForm.MainEdit);
+    End;
+   end;
+  end;
+ end;
+
+ UpHost:=OptionsForm.Edit13.Text;
+ AutoCheck:=OptionsForm.CheckBox1.Checked;
+ AutoMinimaze:=OptionsForm.CheckBox2.Checked;
+ AutoRun:=OptionsForm.CheckBox3.Checked;
+ AutoLog:=OptionsForm.CheckBox4.Checked;
+ AssignFile(F, 'Script\files.cfg');
+ ReWrite(F);
+ Writeln(F, OptionsForm.LB.Items.Count);
+ For I:=0 To OptionsForm.LB.Items.Count-1 Do
+ Begin
+  Writeln(F, OptionsForm.LB.Items[I]);
+ End;
+ CloseFile(F);
+ SaveIniFile('Settings\config.ini');
+ SetLength(Ops, 0);
+ SetLength(OpsList, 0);
+ SetLength(BanUsersIP, 0);
+ SetLength(BanUsersName, 0);
+ Assign(F, 'Settings\OpList.txt');
+ ReWrite(F);
+ I:=0;
+ While I<=OptionsForm.OOps.Items.Count-1 Do
+ Begin
+  WriteLn(F, OptionsForm.OOps.Items.Item[I].Caption+';#'+OptionsForm.OOps.Items.Item[I].SubItems[0]);
+  Inc(I);
+ End;
+ Close(F);
+ Assign(F, 'Settings\BanIP.txt');
+ ReWrite(F);
+ I:=0;
+ While I<=OptionsForm.OBanIP.Items.Count-1 Do
+ Begin
+  T:=StrToFloat(OptionsForm.OBanIP.Items.Item[I].SubItems[0]);
+  A:=Time+T*60*OneSec;
+  B:=Date;
+  If A>1 Then
+  Begin
+   B:=B+Trunc(A);
+   A:=A-Trunc(A);
+  End;
+  Write(F, OptionsForm.OBanIP.Items.Item[I].Caption+';#'+FloatToStr(B)+';#'+FloatToStr(A));
+  Inc(I);
+ End;
+ Close(F);
+ Assign(F, 'Settings\BanName.txt');
+ ReWrite(F);
+ I:=0;
+ While I<=OptionsForm.OBanName.Items.Count-1 Do
+ Begin
+  T:=StrToInt64(OptionsForm.OBanName.Items.Item[I].SubItems[0]);
+  A:=Time+T*60*OneSec;
+  B:=Date;
+  If A>1 Then
+  Begin
+   B:=B+Trunc(A);
+   A:=A-Trunc(A);
+  End;
+  Write(F, OptionsForm.OBanName.Items.Item[I].Caption+';#'+FloatToStr(B)+';#'+FloatToStr(A));
+  Inc(I);
+ End;
+ Close(F);
+ Assign(F, 'Settings\CoolNames.txt');
+ ReWrite(F);
+ I:=0;
+ While I<=OptionsForm.OCoolName.Items.Count-1 Do
+ Begin
+  WriteLn(F, OptionsForm.OCoolName.Items.Item[I].Caption+';#'+OptionsForm.OCoolName.Items.Item[I].SubItems[0]);
+  Inc(I);
+ End;
+ Close(F);
+ LoadOpList;
+ LoadBanIP;
+ LoadBanName;
+ LoadCoolName;
+ Done;
+ Init;
+ RegBot(BotName, '', '');
+ if AutoRun then
+ Begin
+  Reg := nil;
+  try
+    reg := TRegistry.Create;
+    reg.RootKey := HKEY_LOCAL_MACHINE;
+    reg.LazyWrite := false;
+    reg.OpenKey('Software\Microsoft\Windows\CurrentVersion\Run',
+      false);
+    reg.WriteString('IceHub', '"'+Application.ExeName+'" "'+GetCurrentDir+'"');
+    reg.CloseKey;
+    reg.free;
+  except
+   if Assigned(Reg) then Reg.Free;
+  end;
+ end Else
+ Begin
+  Reg := nil;
+  try
+    reg := TRegistry.Create;
+    reg.RootKey := HKEY_LOCAL_MACHINE;
+    reg.LazyWrite := false;
+    reg.OpenKey('Software\Microsoft\Windows\CurrentVersion\Run',
+      false);
+    reg.DeleteValue('IceHub');
+    reg.CloseKey;
+    reg.free;
+  except
+   if Assigned(Reg) then Reg.Free;
+  end;
+ end;
+End;
+
+Procedure Load;
+
+Var I: Integer;
+    T, A, B: Extended;
+
+Begin
+ Edit:=True;
+ OptionsForm.ScriptEdit.Lines.Clear;
+ OptionsForm.Edit1.Text:=HubName;
+ OptionsForm.Edit2.Text:=HubTopic;
+ OptionsForm.Edit3.Text:=BotName;
+ OptionsForm.Edit4.Text:=IntToStr(HubMinSlots);
+ OptionsForm.Edit5.Text:=HubMinShare;
+ OptionsForm.Edit6.Text:=IntToStr(CountLastMessages);
+ OptionsForm.Edit7.Text:=IntToStr(HubMaxHubs);
+ OptionsForm.Edit8.Text:='';
+ for I := 0 to High(HubPort) do
+  OptionsForm.Edit8.Text:=OptionsForm.Edit8.Text+IntToStr(HubPort[I])+';';
+ OptionsForm.Edit13.Text:=UpHost;
+ OptionsForm.CheckBox1.Checked:=AutoCheck;
+ OptionsForm.LB.Items.Clear;
+ OptionsForm.CheckBox2.Checked:=AutoMinimaze;
+ OptionsForm.CheckBox3.Checked:=AutoRun;
+ OptionsForm.CheckBox4.Checked:=AutoLog;
+ For I:=0 To High(Files) Do
+ Begin
+  OptionsForm.LB.Items.Add(Files[I].FileName);
+ End;
+ OptionsForm.OOps.Items.Clear;
+ OptionsForm.OBanIP.Items.Clear;
+ OptionsForm.OBanName.Items.Clear;
+ OptionsForm.OCoolName.Items.Clear;
+ For I:=0 To High(OpsList) Do
+ Begin
+  OptionsForm.OOps.Items.Add;
+  OptionsForm.OOps.Items.Item[I].Caption:=OpsList[I].Name;
+  OptionsForm.OOps.Items.Item[I].SubItems.Add(IntToStr(OpsList[I].Rights));
+ End;
+ For I:=0 To High(BanUsersIP) Do
+ Begin
+  OptionsForm.OBanIP.Items.Add;
+  OptionsForm.OBanIP.Items.Item[I].Caption:=BanUsersIP[I].IP;
+  A:=BanUsersIP[I].Date-Date;
+  B:=BanUsersIP[I].Time-Time;
+  A:=A+B;
+  OptionsForm.OBanIP.Items.Item[I].SubItems.Add(FloatToStr(Trunc(A/OneSec/60*100)/100));
+ End;
+ For I:=0 To High(BanUsersName) Do
+ Begin
+  OptionsForm.OBanName.Items.Add;
+  OptionsForm.OBanName.Items.Item[I].Caption:=BanUsersName[I].Name;
+  A:=BanUsersIP[I].Date-Date;
+  B:=BanUsersIP[I].Time-Time;
+  A:=A+B;
+  OptionsForm.OBanName.Items.Item[I].SubItems.Add(FloatToStr(Trunc(A/OneSec/60*100)/100));
+ End;
+ For I:=0 To High(CoolUsers) Do
+ Begin
+  OptionsForm.OCoolName.Items.Add;
+  OptionsForm.OCoolName.Items.Item[I].Caption:=CoolUsers[I].Name;
+  OptionsForm.OCoolName.Items.Item[I].SubItems.Add(CoolUsers[I].CoolName);
+ End;
+ OptionsForm.TabbedNotebook1.PageIndex:=2;
+ OptionsForm.TabbedNotebook1.PageIndex:=0;
+End;
+
+procedure TOptionsForm.Button2Click(Sender: TObject);
+begin
+ OptionsForm.Close;
+end;
+
+procedure TOptionsForm.Button1Click(Sender: TObject);
+
+var F: TextFile;
+
+begin
+ If Edited<>'' Then
+ Begin
+  AssignFile(F, Edited);
+  Rewrite(F);
+  WriteLn(F, ScriptEdit.Lines.Text);
+  CloseFile(F);
+ End;
+ Save;
+ Button2Click(Button1);
+end;
+
+procedure TOptionsForm.Button3Click(Sender: TObject);
+
+var F: TextFile;
+
+begin
+ If Edited<>'' Then
+ Begin
+  AssignFile(F, Edited);
+  Rewrite(F);
+  WriteLn(F, ScriptEdit.Lines.Text);
+  CloseFile(F);
+ End;
+ Save;
+end;
+
+procedure TOptionsForm.LBDblClick(Sender: TObject);
+
+Var I: Integer;
+    F: TextFile;
+
+begin
+ If (RChanged)And(Edited<>'') Then
+ Begin
+  I:=MessageBox(Application.Handle, 'Вы хотите сохранить?? или вы промахнулись??', 'Сохранение', MB_YESNOCANCEL);
+  If I=IDYES Then //Yes
+  Begin
+   AssignFile(F, Edited);
+   Rewrite(F);
+   WriteLn(F, ScriptEdit.Lines.Text);
+   CloseFile(F);
+   if FileExists(LB.Items[I]) then
+   begin
+    ScriptEdit.Lines.LoadFromFile(LB.Items[I]);
+    Edit:=True;
+    Syntax(ScriptEdit, Rezerved, Skobki, clBlack, [], True);
+    Edit:=False;
+   end else
+    ScriptEdit.Lines.Clear;
+   Edited:=LB.Items[I];
+  End;
+  If I=IDNO Then //NO
+  Begin
+   if FileExists(LB.Items[I]) then
+   begin
+    ScriptEdit.Lines.LoadFromFile(LB.Items[I]);
+    Edit:=True;
+    ScriptEdit.Lines.BeginUpdate;
+    Syntax(ScriptEdit, Rezerved, Skobki, clBlack, [], True);
+    ScriptEdit.Lines.EndUpdate;
+    Edit:=False;
+   end else
+    Scriptedit.Lines.Clear;
+   Edited:=LB.Items[I];
+  End;
+  If I=IDCANCEL Then //Cancel
+  Begin
+ {  For I:=0 To LB.Items.Count-1 Do
+    If LB.Selected[I] Then
+     Edited:=LB.Items.Strings[I];
+   For I:=0 To LB.Items.Count-1 Do
+   Begin
+    If LB.Selected[I] Then
+    Begin
+     ScriptEdit.Lines.LoadFromFile(LB.Items[I]);
+     Break;
+    End;
+   End;
+   RChanged:=False;
+   Edited:='';
+   For I:=0 To LB.Items.Count-1 Do
+    If LB.Selected[I] Then
+     Edited:=LB.Items.Strings[I];}
+  End;
+ End Else
+ Begin
+  RChanged:=False;
+  For I:=0 To LB.Items.Count-1 Do
+  Begin
+   If LB.Selected[I] Then
+   Begin
+    if FileExists(LB.Items[I]) then
+    begin
+     ScriptEdit.Lines.LoadFromFile(LB.Items[I]);
+     Edit:=True;
+     ScriptEdit.Lines.BeginUpdate;
+     Syntax(ScriptEdit, Rezerved, Skobki, clBlack, [], True);
+     ScriptEdit.Lines.EndUpdate;
+     Edit:=False;
+    end else
+     Scriptedit.Lines.Clear;
+    Edited:=LB.Items[I];
+    Break;
+   End;
+  End;
+  For I:=0 To LB.Items.Count-1 Do
+   If LB.Selected[I] Then
+    Edited:=LB.Items.Strings[I];
+ End;
+end;
+
+procedure TOptionsForm.Button5Click(Sender: TObject);
+
+Var S: String;
+
+begin
+ S:=GetCurrentDir;
+ If OpenDialog1.Execute Then
+  LB.Items.Add(OpenDialog1.FileName);
+ SetCurrentDir(S);
+end;
+
+procedure TOptionsForm.Button4Click(Sender: TObject);
+
+begin
+ LB.DeleteSelected;
+end;
+
+procedure TOptionsForm.Button6Click(Sender: TObject);
+
+Var F: TextFile;
+
+begin
+ If Edited<>'' Then
+ Begin
+  AssignFile(F, Edited);
+  Rewrite(F);
+  WriteLn(F, ScriptEdit.Lines.Text);
+  CloseFile(F);
+ End;
+end;
+
+procedure TOptionsForm.RichEdit1Change(Sender: TObject);
+begin
+ RChanged:= True;
+end;
+
+procedure TOptionsForm.ScriptEditChange(Sender: TObject);
+begin
+  Ti:=Time;
+  if Not Edit then
+  begin
+    Edit:=True;
+    Syntax(ScriptEdit, Rezerved, Skobki, clBlack, [], False);
+    Edit:=False;
+  end;
+end;
+
+procedure TOptionsForm.Button7Click(Sender: TObject);
+begin
+ AddForm.Label1.Caption:='Ник: ';
+ AddForm.Label2.Caption:='Права (>0, <=10): ';
+ AddForm.Caption:='Добавить Админа';
+ Add.AddForm.ShowModal;
+ If (Ed1<>'')And(Ed2<>'') Then
+ Begin
+  OOps.Items.Add;
+  OOps.Items.Item[OOps.Items.Count-1].Caption:=Ed1;
+  OOps.Items.Item[OOps.Items.Count-1].SubItems.Add(Ed2);
+ End;
+end;
+
+procedure TOptionsForm.Button9Click(Sender: TObject);
+begin
+ AddForm.Label1.Caption:='ИП: ';
+ AddForm.Label2.Caption:='На сколько (минуты): ';
+ AddForm.Caption:='Забанить по ИП';
+ AddForm.ShowModal;
+ If (Ed1<>'')And(Ed2<>'') Then
+ Begin
+  OBanIP.Items.Add;
+  OBanIP.Items.Item[OBanIP.Items.Count-1].Caption:=Ed1;
+  OBanIP.Items.Item[OBanIP.Items.Count-1].SubItems.Add(Ed2);
+ End;
+end;
+
+procedure TOptionsForm.FormCreate(Sender: TObject);
+begin
+ LoadRezerved;
+end;
+
+procedure TOptionsForm.Button12Click(Sender: TObject);
+begin
+ AddForm.Label1.Caption:='Ник: ';
+ AddForm.Label2.Caption:='На сколько (минуты): ';
+ AddForm.Caption:='Забанить по Нику';
+ AddForm.ShowModal;
+ If (Ed1<>'')And(Ed2<>'') Then
+ Begin
+  OBanName.Items.Add;
+  OBanName.Items.Item[OBanName.Items.Count-1].Caption:=Ed1;
+  OBanName.Items.Item[OBanName.Items.Count-1].SubItems.Add(Ed2);
+ End;
+end;
+
+procedure TOptionsForm.Button13Click(Sender: TObject);
+begin
+ AddForm.Label1.Caption:='Ник: ';
+ AddForm.Label2.Caption:='Новый Ник: ';
+ AddForm.Caption:='Переименовка';
+ AddForm.ShowModal;
+ If (Ed1<>'')And(Ed2<>'') Then
+ Begin
+  OCoolName.Items.Add;
+  OCoolName.Items.Item[OCoolName.Items.Count-1].Caption:=Ed1;
+  OCoolName.Items.Item[OCoolName.Items.Count-1].SubItems.Add(Ed2);
+ End;
+end;
+
+procedure TOptionsForm.Button14Click(Sender: TObject);
+
+Var I: LongInt;
+
+begin
+ I:=0;
+ While I<=OCoolName.Items.Count-1 Do
+ Begin
+  If OCoolName.Items.Item[I].Selected Then
+  Begin
+   OCoolName.Items.Item[I].Delete;
+   Dec(I);
+  End;
+  Inc(I);
+ End;
+end;
+
+procedure TOptionsForm.Button15Click(Sender: TObject);
+begin
+ MainForm.UpSocket.Close;
+ MainForm.UpSocket.Host:=Edit13.Text;
+ MainForm.UpSocket.Open;
+end;
+
+procedure TOptionsForm.Button8Click(Sender: TObject);
+
+Var I: LongInt;
+
+begin
+ I:=0;
+ While I<=OOps.Items.Count-1 Do
+ Begin
+  If OOps.Items.Item[I].Selected Then
+  Begin
+   OOps.Items.Item[I].Delete;
+   Dec(I);
+  End;
+  Inc(I);
+ End;
+end;
+
+procedure TOptionsForm.Button10Click(Sender: TObject);
+
+Var I: LongInt;
+
+begin
+ I:=0;
+ While I<=OBanIP.Items.Count-1 Do
+ Begin
+  If OBanIP.Items.Item[I].Selected Then
+  Begin
+   OBanIP.Items.Item[I].Delete;
+   Dec(I);
+  End;
+  Inc(I);
+ End;
+end;
+
+procedure TOptionsForm.Button11Click(Sender: TObject);
+
+Var I: LongInt;
+
+begin
+ I:=0;
+ While I<=OBanName.Items.Count-1 Do
+ Begin
+  If OBanName.Items.Item[I].Selected Then
+  Begin
+   OBanName.Items.Item[I].Delete;
+   Dec(I);
+  End;
+  Inc(I);
+ End;
+end;
+
+Function GetWord(RE: TRichEdit; var Be, Len: LongInt): String;
+
+var I, N: LongInt;
+
+begin
+  N:=0;
+  for I:=1 to RE.CaretPos.Y do
+    Inc(N, Length(RE.Lines[I])+2);
+  for I:=N downto 1 do
+  begin
+    if Not Letter(RE.Text[I]) then
+    begin
+      Be:=I;
+      Break;
+    end;
+  end;
+  for I:=N to Length(RE.Text) do
+  begin
+    if Not Letter(RE.Text[I]) then
+    begin
+      Len:=I-Be;
+      Break;
+    end;
+  end;
+end;
+
+
+
+Function CheckWord(RE: TRichEdit; Rez: array of TRezerved): Boolean;
+
+var T: String;
+    J: LongInt;
+
+begin
+  T:=RUpperCase(RE.Text);
+  for J:=0 to High(Rez) do
+  begin
+    if (T=Rez[J].S) then
+    begin
+{      RE.Perform(EM_SETSEL, 0, Length(RE.Text));
+      RE.SelAttributes.Color:=Rez[J].Style.Color;
+      RE.SelAttributes.Style:=Rez[J].Style.Styles;}
+      Break;
+    end;
+  end;
+end;
+
+procedure TOptionsForm.ScriptEditKeyUp(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+
+var Be, Len: LongInt;
+    F: TextFile;
+    T, Te: String;
+    I: LongInt;
+
+begin
+  if (ssCtrl in Shift) and (Key = ord('S')) then
+  begin
+    if Edited<>'' then
+    begin
+      AssignFile(F, Edited);
+      Rewrite(F);
+      WriteLn(F, ScriptEdit.Lines.Text);
+      CloseFile(F);
+    end;
+  end;
+
+{  if Key=13 then
+  begin
+//    key:=0;
+    T:='';
+//    Te:=Copy(ScriptEdit.Lines[ScriptEdit.CaretPos.Y], ScriptEdit.CaretPos.X+1, Length(ScriptEdit.Lines[ScriptEdit.CaretPos.Y]));
+    for I:=1 To Length(ScriptEdit.Lines[ScriptEdit.CaretPos.Y-1]) do
+    begin
+      if ScriptEdit.Lines[ScriptEdit.CaretPos.Y-1][I]<>' ' then Break;
+      T:=T+' ';
+    end;
+    ScriptEdit.Lines[ScriptEdit.CaretPos.Y]:=T+ScriptEdit.Lines[ScriptEdit.CaretPos.Y];
+  end;
+{  if (ssCtrl in Shift) and (Key = ord('V')) then Syntax(ScriptEdit, Rezerved, Skobki, clBlack, [], True)
+  else
+  begin
+    GetWord(ScriptEdit.Text, Be, Len);
+    if CheckWord(S) then
+  end;}
+end;
+
+end.
